@@ -1,0 +1,12 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Daily reminders — runs at 18:00 UTC every day
+# = 20:00 Madrid in summer (CEST = UTC+2)
+# = 19:00 Madrid in winter (CET = UTC+1)
+[functions."daily-reminders"]
+  schedule = "0 18 * * *"
