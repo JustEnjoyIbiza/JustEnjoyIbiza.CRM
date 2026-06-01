@@ -3339,6 +3339,31 @@ function parseInvoiceAndFill(fileUrl, fileName) {
         }
       }
 
+      // SAFETY NET: never let the user's OWN company land in the client/supplier
+      // field. The backend already strips this for direction==="out", but if the
+      // direction toggle was still on the default "RECEIVED" when the file was
+      // uploaded, that server guard is skipped — so we re-check here on the client,
+      // regardless of direction. Fixes "invoice shows MY company instead of the client".
+      (function () {
+        if (!d.supplier) return;
+        var s = String(d.supplier)
+          .toLowerCase()
+          .normalize("NFD").replace(/[̀-ͯ]/g, "")
+          .replace(/[.,;:'"()\[\]\/\\\-_]/g, " ")
+          .replace(/\s+/g, " ").trim();
+        var own = ["just enjoy ibiza","just enjoy","justenjoyibiza","justenjoy",
+                   "jei sl","jei s l","b56880875","b 56880875",
+                   "letca","alin letca","alin stefan letca",
+                   "avenida sant jordi 48","sant jordi 48 52","07817 ibiza"];
+        for (var i = 0; i < own.length; i++) {
+          if (s.indexOf(own[i]) !== -1) {
+            d.supplier = "";              // blank it so the user fills the real client
+            d._ownStripped = own[i];
+            break;
+          }
+        }
+      })();
+
       fillIfEmpty("inv-supplier", d.supplier);
       fillIfEmpty("inv-date", d.date);
       fillNumberIfEmpty("inv-total", d.total);
@@ -3374,11 +3399,16 @@ function parseInvoiceAndFill(fileUrl, fileName) {
       var conf = d.confidence || "medium";
       var icon = conf === "high" ? "✓" : conf === "low" ? "⚠" : "ℹ";
       var color = conf === "high" ? "var(--green)" : conf === "low" ? "var(--amber)" : "var(--blue)";
+      // If we stripped the user's own company, tell them WHY the name is blank and what to do.
+      var ownNote = d._ownStripped
+        ? '<div style="color:var(--amber);margin-top:4px;font-size:12px">⚠ This looks like an invoice you <b>SENT</b>. Make sure the toggle is set to <b>↘ SENT</b>, then type the <b>client\'s</b> name (we left it blank so your own company name wasn\'t saved by mistake).</div>'
+        : '';
       statusEl.innerHTML =
         '<span style="color:' + color + '">' + icon + ' AI filled ' + filled.length +
         ' field' + (filled.length === 1 ? "" : "s") +
         ' · confidence: ' + conf + ' — please review before saving.</span>' +
-        ' <button type="button" onclick="reparseCurrentInvoice()" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid var(--blue);background:var(--surface);color:var(--blue);border-radius:6px;cursor:pointer">↻ Re-read</button>';
+        ' <button type="button" onclick="reparseCurrentInvoice()" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid var(--blue);background:var(--surface);color:var(--blue);border-radius:6px;cursor:pointer">↻ Re-read</button>' +
+        ownNote;
     })
     .catch(function (err) {
       statusEl.innerHTML = '<span style="color:var(--amber)">⚠ AI read failed: ' + esc(err.message || "network error") + '</span>';
