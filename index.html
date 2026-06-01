@@ -4186,7 +4186,7 @@ function renderBookings() {
   var t = today();
   var monthStr = MONTHS[bkMonth] + " " + bkYear;
   var filtered = bookingEntries.filter(function(b){
-    var bd = new Date(b.date);
+    var bd = new Date((b.date || "") + "T12:00:00"); // noon avoids UTC day-shift across timezones
     if (bd.getMonth() !== bkMonth || bd.getFullYear() !== bkYear) return false;
     if (bkFilter === "confirmed" && b.status !== "confirmed") return false;
     if (bkFilter === "pending" && b.status !== "pending") return false;
@@ -4238,7 +4238,7 @@ function renderBookings() {
   // Build unique sorted boat list for this month
   var monthBoats = [];
   bookingEntries.forEach(function(b){
-    var bd = new Date(b.date);
+    var bd = new Date((b.date || "") + "T12:00:00"); // noon avoids UTC day-shift across timezones
     if (bd.getMonth() === bkMonth && bd.getFullYear() === bkYear && b.boat) {
       if (monthBoats.indexOf(b.boat) === -1) monthBoats.push(b.boat);
     }
@@ -6046,7 +6046,7 @@ function saveBke() {
     data.id = editBkeId;
   } else {
     if (data.date) {
-      var d = new Date(data.date);
+      var d = new Date(data.date + "T12:00:00"); // noon avoids UTC day-shift across timezones
       bkMonth = d.getMonth();
       bkYear = d.getFullYear();
     }
