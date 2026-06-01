@@ -7413,6 +7413,26 @@ function globalSearch(query) {
         var a = qNumbers[0], b2 = qNumbers[1];
         if (a >= 1 && a <= 31 && b2 >= 1 && b2 <= 12) { isSpecificDay = true; wantDay = a; wantMonth = b2 - 1; }
         else if (b2 >= 1 && b2 <= 31 && a >= 1 && a <= 12) { isSpecificDay = true; wantDay = b2; wantMonth = a - 1; }
+      } else if (qMonthIdx === null && qNumbers.length === 3) {
+        // numeric "3 7 2026" / "07.07.2026" where the year wasn't auto-detected as a
+        // separate token — treat as DD MM YYYY (European, day-first). Pull the year out.
+        var n0 = qNumbers[0], n1 = qNumbers[1], n2 = qNumbers[2];
+        if (n2 >= 2000) { qYear = n2; }       // third is the year
+        if (n0 >= 1 && n0 <= 31 && n1 >= 1 && n1 <= 12) { isSpecificDay = true; wantDay = n0; wantMonth = n1 - 1; }
+        else if (n1 >= 1 && n1 <= 31 && n0 >= 1 && n0 <= 12) { isSpecificDay = true; wantDay = n1; wantMonth = n0 - 1; }
+      } else if (qMonthIdx !== null && qNumbers.length === 2) {
+        // e.g. "7 july 2026" where year got pushed into qNumbers — month word + day + year
+        var d0 = qNumbers[0], d1 = qNumbers[1];
+        var theDay = (d0 >= 1 && d0 <= 31) ? d0 : ((d1 >= 1 && d1 <= 31) ? d1 : null);
+        var theYear = (d0 >= 2000) ? d0 : ((d1 >= 2000) ? d1 : null);
+        if (theDay !== null) { isSpecificDay = true; wantDay = theDay; wantMonth = qMonthIdx; if (theYear) qYear = theYear; }
+      }
+      // GUARD: a day-number + year with NO month (e.g. "7 2026") is ambiguous and must
+      // NOT fall through to loose token matching (which returns the whole month). If the
+      // query has only digits, a year, and no month word, require the day to match exactly.
+      if (!isSpecificDay && qMonthIdx === null && qYear !== null && qNumbers.length === 1
+          && qNumbers[0] >= 1 && qNumbers[0] <= 31) {
+        return (day === qNumbers[0]) && (year === qYear);
       }
       if (isSpecificDay) {
         var dayOk  = (day === wantDay);
