@@ -267,6 +267,19 @@ nav{padding:10px 8px;flex:1;overflow-y:auto}
 .td-banner-l{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
 .td-banner-v{font-size:24px;font-weight:700;letter-spacing:-0.03em;line-height:1.1}
 .td-banner-s{font-size:11px;color:var(--text3);margin-top:4px;font-weight:500}
+.td-daytabs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+.td-daytab{text-align:left;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s ease;font-family:inherit;position:relative;overflow:hidden}
+.td-daytab:hover{border-color:var(--border2);box-shadow:var(--sh-sm)}
+.td-daytab.on{border-color:transparent;background:var(--grad-orange);box-shadow:0 4px 14px rgba(30,90,168,.28)}
+.td-daytab-top{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:-0.01em;color:var(--text)}
+.td-daytab.on .td-daytab-top{color:#fff}
+.td-daytab-n{margin-left:auto;background:var(--surface2);color:var(--text2);font-size:13px;font-weight:800;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:8px;padding:0 7px}
+.td-daytab.on .td-daytab-n{background:rgba(255,255,255,.25);color:#fff}
+.td-daytab-sub{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-top:3px}
+.td-daytab.on .td-daytab-sub{color:rgba(255,255,255,.85)}
+.td-daytab-stats{font-size:13px;font-weight:600;color:var(--text2);margin-top:8px}
+.td-daytab.on .td-daytab-stats{color:rgba(255,255,255,.95)}
+@media(max-width:560px){.td-daytab{padding:13px 14px}.td-daytab-top{font-size:14px}}
 .td-section{margin-bottom:28px}
 .td-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:0}
 .td-section-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-0.02em;display:flex;align-items:center;gap:10px}
@@ -3827,6 +3840,8 @@ function renderQuickStats() {
   }).join("");
 }
 
+var todayTab = "today"; // "today" or "tomorrow" — which day's charters the toggle shows
+function setTodayTab(tab) { todayTab = tab; renderToday(); }
 function renderToday() {
   var t = today();
   var now = new Date();
@@ -3956,16 +3971,41 @@ function renderToday() {
       '<div class="td-banner-item"><div class="td-banner-l">Profit</div><div class="td-banner-v" style="color:var(--green)">' + eur(Math.round(monthProfit)) + '</div></div>' +
     '</div>' +
 
-    // Today's charters
-    '<div class="td-section">' +
-      '<div class="td-section-head">' +
-        '<div class="td-section-title"><span class="td-section-title-dot" style="background:var(--orange)"></span>Today\'s charters</div>' +
-        '<div class="td-section-count">' + todayCharters.length + '</div>' +
-      '</div>' +
-      (todayCharters.length === 0
-        ? '<div class="td-empty">No charters today. Enjoy the day or chase some leads.</div>'
-        : todayCharters.map(function(b){return renderCharterCard(b, "today");}).join('')) +
-    '</div>';
+    // ===== TODAY / TOMORROW toggle — the at-a-glance daily view =====
+    (function(){
+      // Per-day summary stats so each button shows count + pax + expected income
+      function dayStats(list){
+        var pax = 0, income = 0;
+        for (var i=0;i<list.length;i++){
+          pax += (parseInt(list[i].pax,10) || 0);
+          income += bkFinancials(list[i]).total || 0;
+        }
+        return { n:list.length, pax:pax, income:Math.round(income) };
+      }
+      var tS = dayStats(todayCharters), mS = dayStats(tomorrowCharters);
+      var active = todayTab;
+      var list = active === "tomorrow" ? tomorrowCharters : todayCharters;
+      var tomLabel = new Date(now.getTime()+86400000).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+
+      function dayBtn(key, title, sub, s){
+        var on = active === key;
+        return '<button type="button" class="td-daytab' + (on?' on':'') + '" onclick="setTodayTab(\'' + key + '\')">' +
+          '<div class="td-daytab-top">' + title + '<span class="td-daytab-n">' + s.n + '</span></div>' +
+          '<div class="td-daytab-sub">' + sub + '</div>' +
+          '<div class="td-daytab-stats">' + (s.n? (s.pax + ' pax · ' + eur(s.income)) : 'No charters') + '</div>' +
+        '</button>';
+      }
+
+      return '<div class="td-daytabs">' +
+          dayBtn("today", "TODAY", now.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}), tS) +
+          dayBtn("tomorrow", "TOMORROW", tomLabel, mS) +
+        '</div>' +
+        '<div class="td-section" style="margin-top:14px">' +
+          (list.length === 0
+            ? '<div class="td-empty">' + (active==="today" ? 'No charters today. Enjoy the day or chase some leads.' : 'Nothing booked for tomorrow yet.') + '</div>'
+            : list.map(function(b){return renderCharterCard(b, active);}).join('')) +
+        '</div>';
+    })();
 
   // Payments to chase
   if (paymentsToChase.length > 0) {
@@ -4038,18 +4078,13 @@ function renderToday() {
     html += '</div>';
   }
 
-  // Tomorrow & this week
-  if (tomorrowCharters.length > 0 || weekCharters.length > 0) {
+  // This week (tomorrow is now shown in the toggle above, so only the rest of the week here)
+  if (weekCharters.length > 0) {
     html += '<div class="td-section">' +
       '<div class="td-section-head">' +
-        '<div class="td-section-title"><span class="td-section-title-dot" style="background:var(--purple)"></span>Coming up</div>' +
+        '<div class="td-section-title"><span class="td-section-title-dot" style="background:var(--purple)"></span>Later this week</div>' +
+        '<div class="td-section-count">' + weekCharters.length + '</div>' +
       '</div>';
-    if (tomorrowCharters.length > 0) {
-      html += '<div class="td-rest-day">Tomorrow (' + tomorrowCharters.length + ')</div>';
-      for (var tc = 0; tc < tomorrowCharters.length; tc++) {
-        html += renderCharterCard(tomorrowCharters[tc], "tomorrow");
-      }
-    }
     if (weekCharters.length > 0) {
       html += '<div class="td-rest-day">This week (' + weekCharters.length + ')</div>';
       for (var wc = 0; wc < Math.min(weekCharters.length, 5); wc++) {
