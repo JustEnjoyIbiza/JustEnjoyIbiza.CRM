@@ -3328,7 +3328,8 @@ function parseInvoiceAndFill(fileUrl, fileName) {
     .then(function (resp) {
       if (!resp.ok || !resp.body || resp.body.error || !resp.body.data) {
         var msg = (resp.body && resp.body.error) || ("HTTP " + (resp.body && resp.body.status || "?"));
-        statusEl.innerHTML = '<span style="color:var(--amber)">⚠ AI read failed — fill in manually. (' + esc(msg) + ')</span>';
+        var detail = (resp.body && resp.body.details) ? ' — ' + esc(String(resp.body.details)) : '';
+        statusEl.innerHTML = '<span style="color:var(--amber)">⚠ AI read failed — fill in manually. (' + esc(msg) + ')' + detail + '</span>';
         return;
       }
       var d = resp.body.data;

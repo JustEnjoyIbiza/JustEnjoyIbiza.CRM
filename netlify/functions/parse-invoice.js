@@ -159,12 +159,15 @@ exports.handler = async function (event) {
     });
     if (!anthropicResp.ok) {
       const errText = await anthropicResp.text();
+      // Log the full upstream error to the Netlify function logs so the real
+      // cause (e.g. encrypted/too-large/unreadable PDF) is recoverable.
+      console.error("Anthropic API error", anthropicResp.status, errText);
       return {
         statusCode: 502,
         headers,
         body: JSON.stringify({
           error: "Claude API error (HTTP " + anthropicResp.status + ")",
-          details: errText.substring(0, 500)
+          details: errText.substring(0, 1000)
         })
       };
     }
