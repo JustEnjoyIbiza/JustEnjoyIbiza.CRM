@@ -6528,7 +6528,9 @@ function buildEmailHTML(b, lang, personalNote) {
       regards: "Warm regards,",
       role: "Booking Manager",
       motto: "Arrive as a Client, Leave as a Friend",
-      footerLine: "Thank you for choosing Just Enjoy Ibiza Boats — Charter & Yacht Experiences in Ibiza"
+      footerLine: "Thank you for choosing Just Enjoy Ibiza Boats — Charter & Yacht Experiences in Ibiza",
+      cancelTitle: "CANCELLATION POLICY",
+      cancelText: "Free cancellation up to 15 days before your charter — full refund of your deposit. We will also refund your deposit in full if the charter cannot safely go ahead due to weather: winds over 17 knots, waves over 1 m, or rain."
     };
   } else {
     T = {
@@ -6561,7 +6563,9 @@ function buildEmailHTML(b, lang, personalNote) {
       regards: "Un cordial saludo,",
       role: "Responsable de Reservas",
       motto: "Llegas como cliente, te vas como amigo",
-      footerLine: "Gracias por elegir Just Enjoy Ibiza Boats — Charters y Experiencias de Yate en Ibiza"
+      footerLine: "Gracias por elegir Just Enjoy Ibiza Boats — Charters y Experiencias de Yate en Ibiza",
+      cancelTitle: "POLÍTICA DE CANCELACIÓN",
+      cancelText: "Cancelación gratuita hasta 15 días antes de su charter — reembolso íntegro de su depósito. También le reembolsaremos el depósito completo si el charter no puede realizarse con seguridad por motivos meteorológicos: viento superior a 17 nudos, olas de más de 1 metro o lluvia."
     };
   }
 
@@ -6652,6 +6656,13 @@ function buildEmailHTML(b, lang, personalNote) {
               '<tr><td colspan="2" style="padding:0 0 4px;color:#9B6300;font-size:11px;font-style:italic;text-align:right">' + T.balanceNote + '</td></tr>'
             : '<tr><td colspan="2" style="padding:14px 0 4px;text-align:center;color:#16A34A;font-size:16px;font-weight:700">' + T.fullyPaid + '</td></tr>') +
         '</table>' +
+      '</div>' +
+    '</td></tr>' +
+    // ===== CANCELLATION POLICY (subtle fine-print) =====
+    '<tr><td style="padding:8px 40px 16px">' +
+      '<div style="background:#F4F6FA;border-radius:12px;padding:16px 20px;border-left:4px solid #9FB2C8">' +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:.12em;color:#647489;margin-bottom:8px;text-transform:uppercase">' + T.cancelTitle + '</div>' +
+        '<div style="font-size:12px;color:#647489;line-height:1.55">' + T.cancelText + '</div>' +
       '</div>' +
     '</td></tr>' +
     // ===== CLOSING =====
